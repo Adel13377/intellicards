@@ -1,95 +1,127 @@
-import Image from "next/image";
-import styles from "./page.module.css";
+'use client';
+import React, { useState } from 'react';
 
 export default function Home() {
-  return (
-    <main className={styles.main}>
-      <div className={styles.description}>
-        <p>
-          Get started by editing&nbsp;
-          <code className={styles.code}>app/page.js</code>
-        </p>
-        <div>
-          <a
-            href="https://vercel.com?utm_source=create-next-app&utm_medium=appdir-template&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            By{" "}
-            <Image
-              src="/vercel.svg"
-              alt="Vercel Logo"
-              className={styles.vercelLogo}
-              width={100}
-              height={24}
-              priority
-            />
-          </a>
-        </div>
-      </div>
+    const [flashcards, setFlashcards] = useState([]);
+    const [question, setQuestion] = useState('');
+    const [answer, setAnswer] = useState('');
+    const [editIndex, setEditIndex] = useState(null);
+    const [searchQuery, setSearchQuery] = useState('');
+    const [sortOrder, setSortOrder] = useState('question');
 
-      <div className={styles.center}>
-        <Image
-          className={styles.logo}
-          src="/next.svg"
-          alt="Next.js Logo"
-          width={180}
-          height={37}
-          priority
-        />
-      </div>
+    const handleAddOrUpdateFlashcard = (e) => {
+        e.preventDefault();
 
-      <div className={styles.grid}>
-        <a
-          href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template&utm_campaign=create-next-app"
-          className={styles.card}
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <h2>
-            Docs <span>-&gt;</span>
-          </h2>
-          <p>Find in-depth information about Next.js features and API.</p>
-        </a>
+        if (!question.trim() || !answer.trim()) {
+            alert('Please enter a valid question and answer.');
+            return;
+        }
 
-        <a
-          href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template&utm_campaign=create-next-app"
-          className={styles.card}
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <h2>
-            Learn <span>-&gt;</span>
-          </h2>
-          <p>Learn about Next.js in an interactive course with&nbsp;quizzes!</p>
-        </a>
+        const newFlashcard = { question: question.trim(), answer: answer.trim() };
 
-        <a
-          href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template&utm_campaign=create-next-app"
-          className={styles.card}
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <h2>
-            Templates <span>-&gt;</span>
-          </h2>
-          <p>Explore starter templates for Next.js.</p>
-        </a>
+        if (editIndex !== null) {
+            const updatedFlashcards = flashcards.map((flashcard, index) =>
+                index === editIndex ? newFlashcard : flashcard
+            );
+            setFlashcards(updatedFlashcards);
+            setEditIndex(null);
+        } else {
+            setFlashcards([...flashcards, newFlashcard]);
+        }
 
-        <a
-          href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template&utm_campaign=create-next-app"
-          className={styles.card}
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <h2>
-            Deploy <span>-&gt;</span>
-          </h2>
-          <p>
-            Instantly deploy your Next.js site to a shareable URL with Vercel.
-          </p>
-        </a>
-      </div>
-    </main>
-  );
+        setQuestion('');
+        setAnswer('');
+    };
+
+    const handleDeleteFlashcard = (index) => {
+        const newFlashcards = flashcards.filter((_, i) => i !== index);
+        setFlashcards(newFlashcards);
+    };
+
+    const filteredFlashcards = flashcards.filter(flashcard =>
+        flashcard.question.toLowerCase().includes(searchQuery.toLowerCase())
+    );
+
+    const sortedFlashcards = filteredFlashcards.sort((a, b) => {
+        if (sortOrder === 'question') {
+            return a.question.localeCompare(b.question);
+        } else {
+            return a.answer.localeCompare(b.answer);
+        }
+    });
+
+    return (
+        <main className="container">
+            <h1 className="title">AI Flashcards</h1>
+            <div className="flashcard-form">
+                <form onSubmit={handleAddOrUpdateFlashcard}>
+                    <input 
+                        type="text"
+                        placeholder="Enter Question"
+                        value={question}
+                        onChange={(e) => setQuestion(e.target.value)}
+                        className="input"
+                    />
+                    <input 
+                        type="text"
+                        placeholder="Enter Answer"
+                        value={answer}
+                        onChange={(e) => setAnswer(e.target.value)}
+                        className="input"
+                    />
+                    <button type="submit" className="button">
+                        {editIndex !== null ? 'Update' : 'Add'}
+                    </button>
+                </form>
+
+                <input
+                    type="text"
+                    placeholder="Search Flashcards"
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    className="input search"
+                />
+                <select
+                    value={sortOrder}
+                    onChange={(e) => setSortOrder(e.target.value)}
+                    className="input select"
+                >
+                    <option value="question">Sort by Question</option>
+                    <option value="answer">Sort by Answer</option>
+                </select>
+            </div>
+
+            <ul className="flashcard-list">
+                {sortedFlashcards.map((flashcard, index) => (
+                    <li key={index} className="flashcard-item">
+                        <div className="flashcard-content">
+                            <span>{flashcard.question}</span>
+                            <span>{flashcard.answer}</span>
+                        </div>
+                        <div className="flashcard-actions">
+                            <button 
+                                onClick={() => {
+                                    setQuestion(flashcard.question);
+                                    setAnswer(flashcard.answer);
+                                    setEditIndex(index);
+                                }}
+                                className="button edit-button"
+                            >
+                                Edit
+                            </button>
+                            <button 
+                                onClick={() => handleDeleteFlashcard(index)}
+                                className="button delete-button"
+                            >
+                                Delete
+                            </button>
+                        </div>
+                    </li>
+                ))}
+            </ul>
+            <div className="total-flashcards">
+                Total Flashcards: {flashcards.length}
+            </div>
+        </main>
+    );
 }
