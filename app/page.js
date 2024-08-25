@@ -8,6 +8,7 @@ export default function Home() {
     const [editIndex, setEditIndex] = useState(null);
     const [searchQuery, setSearchQuery] = useState('');
     const [sortOrder, setSortOrder] = useState('question');
+    const [revealedAnswers, setRevealedAnswers] = useState({});
 
     const handleAddOrUpdateFlashcard = (e) => {
         e.preventDefault();
@@ -33,9 +34,20 @@ export default function Home() {
         setAnswer('');
     };
 
-    const handleDeleteFlashcard = (index) => {
-        const newFlashcards = flashcards.filter((_, i) => i !== index);
-        setFlashcards(newFlashcards);
+    const handleDeleteFlashcard = (indexToDelete) => {
+        setFlashcards(prevFlashcards => prevFlashcards.filter((_, index) => index !== indexToDelete));
+        setRevealedAnswers(prev => {
+            const newRevealed = {...prev};
+            delete newRevealed[indexToDelete];
+            return newRevealed;
+        });
+    };
+
+    const toggleAnswer = (index) => {
+        setRevealedAnswers(prev => ({
+            ...prev,
+            [index]: !prev[index]
+        }));
     };
 
     const filteredFlashcards = flashcards.filter(flashcard =>
@@ -54,7 +66,7 @@ export default function Home() {
         <main className="container">
             <h1 className="title">AI Flashcards</h1>
             <div className="flashcard-form">
-                <form onSubmit={handleAddOrUpdateFlashcard}>
+                <form onSubmit={handleAddOrUpdateFlashcard} className="form-grid">
                     <input 
                         type="text"
                         placeholder="Enter Question"
@@ -70,21 +82,23 @@ export default function Home() {
                         className="input"
                     />
                     <button type="submit" className="button">
-                        {editIndex !== null ? 'Update' : 'Add'}
+                        {editIndex !== null ? 'Update Flashcard' : 'Add Flashcard'}
                     </button>
                 </form>
+            </div>
 
+            <div className="search-sort">
                 <input
                     type="text"
                     placeholder="Search Flashcards"
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
-                    className="input search"
+                    className="input"
                 />
                 <select
                     value={sortOrder}
                     onChange={(e) => setSortOrder(e.target.value)}
-                    className="input select"
+                    className="input"
                 >
                     <option value="question">Sort by Question</option>
                     <option value="answer">Sort by Answer</option>
@@ -93,25 +107,29 @@ export default function Home() {
 
             <ul className="flashcard-list">
                 {sortedFlashcards.map((flashcard, index) => (
-                    <li key={index} className="flashcard-item">
+                    <li 
+                        key={index} 
+                        className={`flashcard-item ${revealedAnswers[index] ? 'show-answer' : ''}`}
+                        onClick={() => toggleAnswer(index)}
+                    >
                         <div className="flashcard-content">
-                            <span>{flashcard.question}</span>
-                            <span>{flashcard.answer}</span>
+                            <div className="flashcard-question">{flashcard.question}</div>
+                            <div className="flashcard-answer">{flashcard.answer}</div>
                         </div>
-                        <div className="flashcard-actions">
+                        <div className="flashcard-actions" onClick={(e) => e.stopPropagation()}>
                             <button 
                                 onClick={() => {
                                     setQuestion(flashcard.question);
                                     setAnswer(flashcard.answer);
                                     setEditIndex(index);
                                 }}
-                                className="button edit-button"
+                                className="action-button edit-button"
                             >
                                 Edit
                             </button>
                             <button 
                                 onClick={() => handleDeleteFlashcard(index)}
-                                className="button delete-button"
+                                className="action-button delete-button"
                             >
                                 Delete
                             </button>
